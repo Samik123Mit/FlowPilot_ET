@@ -1,11 +1,11 @@
 """FlowPilot -- Main application entry point."""
 
 import logging
-import os
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.api.routes import router
@@ -40,20 +40,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routes
+# Register API routes
 app.include_router(router)
 app.include_router(ws_router)
 
+# Serve sample meeting data files
+DATA_DIR = Path(__file__).parent / "data"
+if DATA_DIR.exists():
+    app.mount("/data", StaticFiles(directory=str(DATA_DIR)), name="data")
 
-@app.get("/")
+# Dashboard HTML path
+DASHBOARD_HTML = Path(__file__).parent / "src" / "dashboard" / "index.html"
+
+
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {
-        "service": "FlowPilot",
-        "version": "1.0.0",
-        "tagline": "From Meetings to Momentum",
-        "docs": "/docs",
-        "dashboard": "/dashboard",
-    }
+    """Redirect root to dashboard."""
+    return '<html><head><meta http-equiv="refresh" content="0;url=/dashboard"></head></html>'
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard():
+    """Serve the FlowPilot dashboard."""
+    if DASHBOARD_HTML.exists():
+        return HTMLResponse(content=DASHBOARD_HTML.read_text(), status_code=200)
+    return HTMLResponse(
+        content="<h1>Dashboard not found</h1><p>Expected at src/dashboard/index.html</p>",
+        status_code=404,
+    )
 
 
 if __name__ == "__main__":
