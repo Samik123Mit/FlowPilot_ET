@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowPilot Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--bg-card:#161b22;--bg-hover:#1c2333;--border:#21262d;
+  --text:#e6edf3;--text-dim:#8b949e;--text-muted:#484f58;
+  --teal:#0d7377;--teal-light:#1a9ca0;--teal-bg:rgba(13,115,119,0.12);
+  --green:#2ea043;--green-bg:rgba(46,160,67,0.12);
+  --red:#da3633;--red-bg:rgba(218,54,51,0.12);
+  --orange:#d29922;--orange-bg:rgba(210,153,34,0.12);
+  --blue:#58a6ff;--blue-bg:rgba(88,166,255,0.1);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;overflow:hidden;height:100vh}
+a{color:var(--teal-light);text-decoration:none}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--bg-card);border-bottom:1px solid var(--border);height:52px;flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:10px}
+.logo{width:28px;height:28px;background:var(--teal);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;font-family:Georgia,serif}
+.brand{font-size:15px;font-weight:700;letter-spacing:-0.3px}
+.brand-sub{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px}
+.header-right{display:flex;gap:8px;align-items:center}
+.badge{padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;letter-spacing:0.3px}
+.badge-green{color:var(--green);background:var(--green-bg)}
+.badge-orange{color:var(--orange);background:var(--orange-bg)}
+.badge-red{color:var(--red);background:var(--red-bg)}
+.badge-teal{color:var(--teal-light);background:var(--teal-bg)}
+.badge-blue{color:var(--blue);background:var(--blue-bg)}
+.btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg-hover);color:var(--text);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn:hover{border-color:var(--teal);color:var(--teal-light)}
+.btn-primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn-primary:hover{background:var(--teal-light)}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* LAYOUT */
+.layout{display:flex;height:calc(100vh - 52px)}
+.sidebar{width:200px;background:var(--bg-card);border-right:1px solid var(--border);padding:10px 6px;flex-shrink:0;overflow-y:auto}
+.main{flex:1;overflow-y:auto;padding:20px 24px}
+
+/* NAV */
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text-dim);transition:all .12s;margin-bottom:1px}
+.nav-item:hover{color:var(--text);background:var(--bg-hover)}
+.nav-item.active{color:var(--teal-light);background:var(--teal-bg);font-weight:600}
+.nav-icon{font-size:13px;width:18px;text-align:center}
+.nav-section{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);padding:14px 12px 5px;font-weight:600}
+
+/* PIPELINE STATUS */
+.pipeline-box{margin:14px 6px;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
+.pipeline-box.active{border-color:var(--teal)}
+.pipeline-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--teal-light);margin-bottom:6px}
+.pipeline-step{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-muted);padding:2px 0}
+.pipeline-step.done{color:var(--green)}
+.pipeline-step.running{color:var(--teal-light);font-weight:600}
+.pipeline-step .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* MEETING LIST */
+.meeting-item{padding:6px 12px;border-radius:4px;cursor:pointer;margin-bottom:2px}
+.meeting-item:hover{background:var(--bg-hover)}
+.meeting-item .title{font-size:11px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meeting-item .meta{font-size:9px;color:var(--text-muted)}
+
+/* CARDS */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;transition:border-color .15s}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.card-title{font-size:12px;font-weight:600;color:var(--text);letter-spacing:0.2px}
+
+/* METRICS */
+.metrics-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.metric{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.metric-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.metric-value{font-size:24px;font-weight:700;line-height:1;margin-bottom:2px}
+.metric-sub{font-size:10px;color:var(--text-muted)}
+
+/* GRID LAYOUTS */
+.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.grid-2-equal{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+/* KANBAN */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:start}
+.kanban-col-title{display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:0 2px}
+.kanban-col-title .dot{width:7px;height:7px;border-radius:2px}
+.kanban-col-title span{font-size:11px;font-weight:600}
+.kanban-col-title .count{margin-left:auto;font-size:10px;color:var(--text-muted)}
+.task-card{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:6px;cursor:pointer;transition:all .15s}
+.task-card:hover{border-color:var(--teal);transform:translateY(-1px)}
+.task-card .task-title{font-size:11px;font-weight:600;margin-bottom:5px;line-height:1.3}
+.task-card .task-meta{display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--text-dim)}
+.priority-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px}
+
+/* ACTIVITY LOG */
+.log-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.log-time{font-size:9px;color:var(--text-muted);font-family:monospace;min-width:52px;padding-top:2px;flex-shrink:0}
+.log-dot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.log-content{flex:1;min-width:0}
+.log-agent{font-size:10px;font-weight:600;margin-bottom:2px}
+.log-desc{font-size:11px;color:var(--text-dim);line-height:1.4}
+
+/* CORRECTIONS */
+.correction-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;border-left:3px solid var(--orange)}
+.correction-card.escalation{border-left-color:var(--red)}
+.correction-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.correction-desc{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:10px}
+.correction-states{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.state-box{padding:8px 10px;border-radius:6px;font-size:10px}
+.state-before{background:var(--red-bg);color:var(--red)}
+.state-after{background:var(--green-bg);color:var(--green)}
+.state-arrow{font-size:16px;color:var(--teal-light)}
+
+/* AUDIT TIMELINE */
+.timeline{position:relative;padding-left:20px}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border)}
+.timeline-item{position:relative;padding-bottom:14px}
+.timeline-dot{position:absolute;left:-16px;top:4px;width:8px;height:8px;border-radius:50%;border:2px solid var(--bg);z-index:1}
+.timeline-dot.correction{background:var(--orange)}
+.timeline-dot.normal{background:var(--green)}
+.timeline-body{background:var(--bg-hover);border-radius:6px;padding:10px 12px;border:1px solid var(--border)}
+.timeline-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+
+/* TASK DETAIL MODAL */
+.task-detail{background:var(--bg);border:1px solid var(--teal);border-radius:8px;padding:16px;margin-bottom:14px;position:relative}
+.task-detail .close{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer}
+.lineage-step{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px}
+.lineage-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px}
+.lineage-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:2px}
+.lineage-text{font-size:11px;color:var(--text);line-height:1.4}
+.lineage-quote{background:var(--bg-card);border-left:3px solid var(--teal);padding:6px 10px;font-style:italic;font-size:11px;border-radius:0 4px 4px 0}
+
+/* WORKLOAD HEATMAP */
+.workload-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.workload-cell{border-radius:6px;padding:10px 8px;text-align:center;border:1px solid var(--border)}
+.workload-pct{font-size:18px;font-weight:700;margin-bottom:2px}
+.workload-name{font-size:10px;font-weight:600}
+.workload-detail{font-size:9px;color:var(--text-dim)}
+
+/* CHARTS */
+.chart-container{position:relative;height:180px}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px 20px;color:var(--text-muted)}
+.empty-icon{font-size:32px;margin-bottom:10px}
+.empty-text{font-size:13px;margin-bottom:12px}
+
+/* PROCESSING OVERLAY */
+.processing-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.processing-overlay.show{display:flex}
+.processing-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px 32px;text-align:center;min-width:300px}
+.processing-title{font-size:14px;font-weight:600;margin-bottom:14px}
+.processing-steps{text-align:left}
+.processing-step{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;color:var(--text-muted)}
+.processing-step.done{color:var(--green)}
+.processing-step.active{color:var(--teal-light);font-weight:600}
+
+/* SAMPLE PICKER */
+.sample-picker{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
+.sample-picker select{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-size:11px;width:100%;margin:6px 0}
+.sample-picker textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:4px;font-size:10px;width:100%;height:100px;resize:vertical;font-family:monospace}
+
+/* TAB CONTENT */
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+
+/* TEAM NAME */
+.team-badge{font-size:9px;color:var(--text-muted);padding:4px 12px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">F</div>
+    <div>
+      <div class="brand">FlowPilot</div>
+      <div class="brand-sub">From Meetings to Momentum</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge badge-green">5 Agents Online</span>
+    <button class="btn btn-primary" id="processBtn" onclick="showProcessModal()">+ Process Meeting</button>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="nav-item active" data-tab="overview" onclick="switchTab('overview',this)">
+      <span class="nav-icon">&#9632;</span> Overview
+    </div>
+    <div class="nav-item" data-tab="tasks" onclick="switchTab('tasks',this)">
+      <span class="nav-icon">&#9744;</span> Task Board
+    </div>
+    <div class="nav-item" data-tab="agents" onclick="switchTab('agents',this)">
+      <span class="nav-icon">&#9881;</span> Agent Activity
+    </div>
+    <div class="nav-item" data-tab="corrections" onclick="switchTab('corrections',this)">
+      <span class="nav-icon">&#9888;</span> Self-Corrections
+    </div>
+    <div class="nav-item" data-tab="audit" onclick="switchTab('audit',this)">
+      <span class="nav-icon">&#128269;</span> Audit Trail
+    </div>
+    <div class="nav-item" data-tab="analytics" onclick="switchTab('analytics',this)">
+      <span class="nav-icon">&#128200;</span> Analytics
+    </div>
+
+    <!-- Pipeline Status -->
+    <div class="pipeline-box" id="pipelineBox">
+      <div class="pipeline-title">Pipeline Status</div>
+      <div id="pipelineSteps">
+        <div class="pipeline-step" id="ps-0"><span class="dot"></span> Transcription</div>
+        <div class="pipeline-step" id="ps-1"><span class="dot"></span> Extraction</div>
+        <div class="pipeline-step" id="ps-2"><span class="dot"></span> Orchestration</div>
+        <div class="pipeline-step" id="ps-3"><span class="dot"></span> Follow-Up</div>
+        <div class="pipeline-step" id="ps-4"><span class="dot"></span> Audit</div>
+      </div>
+    </div>
+
+    <!-- Meeting List -->
+    <div class="nav-section">Processed Meetings</div>
+    <div id="meetingList">
+      <div class="meeting-item"><div class="meta" style="color:var(--text-muted);font-size:10px">No meetings yet</div></div>
+    </div>
+
+    <div class="team-badge">Team: isamikshasam | IIT Guwahati</div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main" id="mainContent">
+
+    <!-- OVERVIEW -->
+    <div class="tab-content active" id="tab-overview">
+      <div class="metrics-grid" id="metricsGrid">
+        <div class="metric"><div class="metric-label">Meetings</div><div class="metric-value" id="m-meetings" style="color:var(--text)">0</div><div class="metric-sub">Processed</div></div>
+        <div class="metric"><div class="metric-label">Tasks Created</div><div class="metric-value" id="m-tasks" style="color:var(--green)">0</div><div class="metric-sub">Across all meetings</div></div>
+        <div class="metric"><div class="metric-label">Self-Corrections</div><div class="metric-value" id="m-corrections" style="color:var(--orange)">0</div><div class="metric-sub">Auto-resolved</div></div>
+        <div class="metric"><div class="metric-label">Audit Events</div><div class="metric-value" id="m-audit" style="color:var(--blue)">0</div><div class="metric-sub">Full trail logged</div></div>
+        <div class="metric"><div class="metric-label">Follow-Through</div><div class="metric-value" style="color:var(--teal-light)">85%</div><div class="metric-sub">Up from 30%</div></div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Agent Activity Feed</span><span class="badge badge-green">LIVE</span></div>
+          <div id="overviewFeed" style="max-height:280px;overflow-y:auto"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Task Status Distribution</span></div>
+          <div class="chart-container"><canvas id="statusChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="empty" id="overviewEmpty">
+        <div class="empty-icon">&#128640;</div>
+        <div class="empty-text">No meetings processed yet. Click <strong>+ Process Meeting</strong> to start the pipeline.</div>
+      </div>
+    </div>
+
+    <!-- TASK BOARD -->
+    <div class="tab-content" id="tab-tasks">
+      <div id="taskDetail"></div>
+      <div class="kanban" id="kanbanBoard"></div>
+      <div class="empty" id="tasksEmpty">
+        <div class="empty-icon">&#128203;</div>
+        <div class="empty-text">No tasks yet. Process a meeting to populate the task board.</div>
+      </div>
+    </div>
+
+    <!-- AGENT ACTIVITY -->
+    <div class="tab-content" id="tab-agents">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">Agent Pipeline Flow</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0">
+          <div style="text-align:center" class="agent-node" data-idx="0">
+            <div style="width:40px;height:40px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:16px">&#128221;</div>
+            <div style="font-size:9px;font-weight:600">Transcription</div>
+          </div>
+          <div style="width:30px;height:2px;background:var(--border)"></div>
+          <div style="text-align:center"><div style="width:40px;height:40px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:16px">&#128270;</div><div style="font-size:9px;font-weight:600">Extraction</div></div>
+          <div style="width:30px;height:2px;background:var(--border)"></div>
+          <div style="text-align:center"><div style="width:40px;height:40px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:16px">&#128203;</div><div style="font-size:9px;font-weight:600">Orchestration</div></div>
+          <div style="width:30px;height:2px;background:var(--border)"></div>
+          <div style="text-align:center"><div style="width:40px;height:40px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:16px">&#128276;</div><div style="font-size:9px;font-weight:600">Follow-Up</div></div>
+          <div style="width:30px;height:2px;background:var(--border)"></div>
+          <div style="text-align:center"><div style="width:40px;height:40px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:16px">&#128202;</div><div style="font-size:9px;font-weight:600">Audit</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Detailed Agent Log</span></div>
+        <div id="agentLog" style="max-height:400px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- SELF-CORRECTIONS -->
+    <div class="tab-content" id="tab-corrections">
+      <div class="grid-3" style="margin-bottom:14px">
+        <div class="metric"><div class="metric-label">Total Corrections</div><div class="metric-value" id="mc-total" style="color:var(--orange)">0</div></div>
+        <div class="metric"><div class="metric-label">Auto-Resolved</div><div class="metric-value" id="mc-auto" style="color:var(--green)">0</div><div class="metric-sub">No human needed</div></div>
+        <div class="metric"><div class="metric-label">Escalated</div><div class="metric-value" id="mc-esc" style="color:var(--red)">0</div><div class="metric-sub">Required manager</div></div>
+      </div>
+      <div id="correctionsList"></div>
+    </div>
+
+    <!-- AUDIT TRAIL -->
+    <div class="tab-content" id="tab-audit">
+      <div class="card" style="margin-bottom:14px;background:var(--bg);border-color:var(--teal)">
+        <span style="font-size:12px"><strong style="color:var(--teal-light)">Complete Decision Lineage:</strong> Click any task in the Task Board to trace it from the exact meeting sentence through decision extraction, task creation, and current status.</span>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Full Audit Timeline</span></div>
+        <div class="timeline" id="auditTimeline"></div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="tab-content" id="tab-analytics">
+      <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="metric"><div class="metric-label">Avg Effectiveness</div><div class="metric-value" id="ma-eff" style="color:var(--teal-light)">--</div></div>
+        <div class="metric"><div class="metric-label">Ownership Coverage</div><div class="metric-value" id="ma-own" style="color:var(--green)">--</div></div>
+        <div class="metric"><div class="metric-label">Deadline Coverage</div><div class="metric-value" id="ma-dead" style="color:var(--blue)">--</div></div>
+        <div class="metric"><div class="metric-label">Predicted Follow-Through</div><div class="metric-value" style="color:var(--green)">85%</div></div>
+      </div>
+      <div class="grid-2-equal" style="margin:14px 0">
+        <div class="card"><div class="card-header"><span class="card-title">Task Priority Distribution</span></div><div class="chart-container"><canvas id="priorityChart"></canvas></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">Corrections by Agent</span></div><div class="chart-container"><canvas id="agentChart"></canvas></div></div>
+      </div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header"><span class="card-title">Team Workload Distribution</span></div>
+        <div class="workload-grid" id="workloadGrid"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PROCESSING MODAL -->
+<div class="processing-overlay" id="processModal">
+  <div class="processing-card" style="min-width:420px">
+    <div id="processModalContent">
+      <div class="processing-title">Process a Meeting</div>
+      <div class="sample-picker">
+        <label style="font-size:11px;font-weight:600">Choose a sample meeting:</label>
+        <select id="sampleSelect" onchange="loadSample()">
+          <option value="">-- Select a sample --</option>
+          <option value="sprint_planning">Sprint 24 Planning (5 participants, action items + blockers)</option>
+          <option value="product_review">Product Review Q3 (ambiguous ownership, conflicting priorities)</option>
+          <option value="strategy_meeting">Platform Expansion Strategy (high-level decisions)</option>
+          <option value="retro_failed_followup">Sprint 23 Retro (missed deliverables, failed follow-up)</option>
+        </select>
+        <label style="font-size:11px;font-weight:600;margin-top:6px;display:block">Meeting title:</label>
+        <input type="text" id="meetingTitle" placeholder="Meeting title" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:4px;font-size:11px;width:100%;margin:4px 0">
+        <label style="font-size:11px;font-weight:600;margin-top:4px;display:block">Transcript:</label>
+        <textarea id="meetingTranscript" placeholder="Paste meeting transcript here..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn" onclick="hideProcessModal()">Cancel</button>
+        <button class="btn btn-primary" id="runPipelineBtn" onclick="runPipeline()">Run Pipeline</button>
+      </div>
+    </div>
+    <div id="processRunning" style="display:none">
+      <div class="processing-title">Processing Meeting...</div>
+      <div class="processing-steps" id="processingSteps"></div>
+      <div style="margin-top:12px;font-size:10px;color:var(--text-muted)">Pipeline is running all 5 agents in sequence</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────
+let STATE = { meetings: [], tasks: [], audit_events: [], corrections: [], lastResult: null };
+const API = '/api/v1';
+const SAMPLES = {};
+const PRIORITY_COLORS = {critical:'var(--red)',high:'var(--orange)',medium:'var(--blue)',low:'var(--text-muted)'};
+const STATUS_COLORS = {todo:'var(--text-muted)',in_progress:'var(--blue)',done:'var(--green)',blocked:'var(--orange)',escalated:'var(--red)'};
+let charts = {};
+
+// ── TAB SWITCHING ────────────────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ── SAMPLE LOADING ───────────────────────────────────────────────
+async function loadSample() {
+  const name = document.getElementById('sampleSelect').value;
+  if (!name) return;
+  try {
+    if (!SAMPLES[name]) {
+      const r = await fetch(`/data/sample_meetings/${name}.json`);
+      SAMPLES[name] = await r.json();
+    }
+    const s = SAMPLES[name];
+    document.getElementById('meetingTitle').value = s.title || '';
+    document.getElementById('meetingTranscript').value = s.transcript_text || '';
+  } catch (e) {
+    console.error('Failed to load sample:', e);
+  }
+}
+
+// ── PROCESS MODAL ────────────────────────────────────────────────
+function showProcessModal() { document.getElementById('processModal').classList.add('show'); }
+function hideProcessModal() {
+  document.getElementById('processModal').classList.remove('show');
+  document.getElementById('processModalContent').style.display = '';
+  document.getElementById('processRunning').style.display = 'none';
+}
+
+// ── RUN PIPELINE ─────────────────────────────────────────────────
+async function runPipeline() {
+  const title = document.getElementById('meetingTitle').value || 'Untitled Meeting';
+  const text = document.getElementById('meetingTranscript').value;
+  if (!text.trim()) { alert('Please enter a transcript'); return; }
+
+  // Show processing UI
+  document.getElementById('processModalContent').style.display = 'none';
+  const running = document.getElementById('processRunning');
+  running.style.display = '';
+
+  const agents = ['Transcription Agent', 'Decision Extractor', 'Task Orchestrator', 'Follow-Up Agent', 'Audit Agent'];
+  const stepsDiv = document.getElementById('processingSteps');
+
+  // Animate pipeline steps
+  for (let i = 0; i < agents.length; i++) {
+    stepsDiv.innerHTML = agents.map((a, j) => {
+      let cls = j < i ? 'done' : j === i ? 'active' : '';
+      let icon = j < i ? '&#10003;' : j === i ? '&#9679;' : '&#9675;';
+      return `<div class="processing-step ${cls}"><span>${icon}</span> ${a}</div>`;
+    }).join('');
+    // Update sidebar pipeline
+    for (let j = 0; j < 5; j++) {
+      const el = document.getElementById('ps-' + j);
+      el.className = 'pipeline-step ' + (j < i ? 'done' : j === i ? 'running' : '');
+    }
+    document.getElementById('pipelineBox').classList.add('active');
+    await sleep(600);
+  }
+  // Mark all done in sidebar
+  for (let j = 0; j < 5; j++) document.getElementById('ps-' + j).className = 'pipeline-step done';
+
+  // Make API call
+  try {
+    const resp = await fetch(API + '/meetings/process', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        title: title,
+        transcript_text: text,
+        participants: [],
+      }),
+    });
+    const result = await resp.json();
+    STATE.lastResult = result;
+
+    // Refresh dashboard data
+    await refreshDashboard();
+    hideProcessModal();
+
+    // Reset form
+    document.getElementById('meetingTitle').value = '';
+    document.getElementById('meetingTranscript').value = '';
+    document.getElementById('sampleSelect').value = '';
+
+  } catch (e) {
+    console.error('Pipeline error:', e);
+    alert('Pipeline error: ' + e.message);
+    hideProcessModal();
+  }
+  document.getElementById('pipelineBox').classList.remove('active');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── REFRESH DASHBOARD ────────────────────────────────────────────
+async function refreshDashboard() {
+  try {
+    const r = await fetch(API + '/dashboard');
+    const data = await r.json();
+    STATE.meetings = data.meetings || [];
+    STATE.tasks = data.tasks || [];
+    STATE.audit_events = data.audit_events || [];
+    STATE.corrections = data.corrections || [];
+    renderAll();
+  } catch (e) {
+    console.error('Dashboard fetch failed:', e);
+  }
+}
+
+// ── RENDER ALL ───────────────────────────────────────────────────
+function renderAll() {
+  renderMetrics();
+  renderMeetingList();
+  renderOverviewFeed();
+  renderKanban();
+  renderAgentLog();
+  renderCorrections();
+  renderAuditTrail();
+  renderAnalytics();
+  renderCharts();
+}
+
+function renderMetrics() {
+  document.getElementById('m-meetings').textContent = STATE.meetings.length;
+  document.getElementById('m-tasks').textContent = STATE.tasks.length;
+  document.getElementById('m-corrections').textContent = STATE.corrections.length;
+  document.getElementById('m-audit').textContent = STATE.audit_events.length;
+  document.getElementById('overviewEmpty').style.display = STATE.meetings.length ? 'none' : 'block';
+}
+
+function renderMeetingList() {
+  const el = document.getElementById('meetingList');
+  if (!STATE.meetings.length) {
+    el.innerHTML = '<div class="meeting-item"><div class="meta" style="font-size:10px;color:var(--text-muted)">No meetings yet</div></div>';
+    return;
+  }
+  el.innerHTML = STATE.meetings.map(m => `
+    <div class="meeting-item">
+      <div class="title">${esc(m.title)}</div>
+      <div class="meta">${m.date ? m.date.split('T')[0] : ''} &middot; ${m.quality_score ? Math.round(m.quality_score * 100) + '%' : ''}</div>
+    </div>
+  `).join('');
+}
+
+function renderOverviewFeed() {
+  const el = document.getElementById('overviewFeed');
+  if (!STATE.audit_events.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:11px">No agent activity yet</div>'; return; }
+  el.innerHTML = STATE.audit_events.slice(0, 15).map(e => {
+    const isCorr = e.event_type === 'self_correction';
+    return `<div class="log-item">
+      <span class="log-time">${formatTime(e.timestamp)}</span>
+      <span class="log-dot" style="background:${isCorr ? 'var(--orange)' : 'var(--green)'}"></span>
+      <div class="log-content">
+        <div class="log-agent"><span class="badge badge-teal">${shortAgent(e.agent)}</span> ${isCorr ? '<span class="badge badge-orange">SELF-CORRECTION</span>' : ''}</div>
+        <div class="log-desc">${esc(e.description)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderKanban() {
+  const board = document.getElementById('kanbanBoard');
+  const empty = document.getElementById('tasksEmpty');
+  if (!STATE.tasks.length) { board.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  const cols = [
+    {key:'todo',label:'To Do',color:'var(--text-muted)'},
+    {key:'in_progress',label:'In Progress',color:'var(--blue)'},
+    {key:'done',label:'Done',color:'var(--green)'},
+    {key:'escalated',label:'Escalated',color:'var(--red)'},
+  ];
+
+  board.innerHTML = cols.map(col => {
+    const tasks = STATE.tasks.filter(t => t.status === col.key);
+    return `<div>
+      <div class="kanban-col-title"><span class="dot" style="background:${col.color}"></span><span>${col.label}</span><span class="count">${tasks.length}</span></div>
+      ${tasks.map(t => `
+        <div class="task-card" onclick="showTaskDetail('${t.id}')">
+          <div class="task-title">${esc(t.title)}</div>
+          <div style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap">
+            <span class="badge" style="color:${PRIORITY_COLORS[t.priority] || 'var(--text-muted)'};background:${PRIORITY_COLORS[t.priority]?.replace(')', ',0.12)').replace('var(', 'var(') || 'var(--bg)'};font-size:9px">${t.priority}</span>
+            ${t.assignment_history && t.assignment_history.length > 1 ? '<span class="badge badge-orange">REASSIGNED</span>' : ''}
+          </div>
+          <div class="task-meta"><span>${esc(t.assignee || 'UNASSIGNED')}</span><span>${t.deadline ? t.deadline.split('T')[0] : ''}</span></div>
+        </div>
+      `).join('')}
+    </div>`;
+  }).join('');
+}
+
+function showTaskDetail(taskId) {
+  const task = STATE.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const el = document.getElementById('taskDetail');
+  const history = task.assignment_history || [];
+  const wasReassigned = history.length > 1;
+
+  el.innerHTML = `<div class="task-detail">
+    <button class="close" onclick="document.getElementById('taskDetail').innerHTML=''">&times;</button>
+    <div style="font-size:15px;font-weight:600;margin-bottom:4px">${esc(task.title)}</div>
+    <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
+      <span class="badge" style="color:${PRIORITY_COLORS[task.priority]};font-size:9px">${task.priority}</span>
+      <span class="badge" style="color:${STATUS_COLORS[task.status]};font-size:9px">${task.status.replace('_',' ')}</span>
+      <span class="badge badge-teal">${esc(task.assignee || 'UNASSIGNED')}</span>
+    </div>
+    <div style="background:var(--bg-card);border-radius:6px;padding:12px;border:1px solid var(--border)">
+      <div style="font-size:10px;font-weight:600;color:var(--teal-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Decision Lineage (Audit Trail)</div>
+      <div class="lineage-step">
+        <div class="lineage-num" style="background:var(--teal)">1</div>
+        <div><div class="lineage-label">Source: Meeting Transcript</div>
+          <div class="lineage-quote">${esc(task.description || task.title)}</div>
+          <div style="font-size:9px;color:var(--text-muted);margin-top:2px">Meeting ID: ${task.meeting_id || 'N/A'}</div>
+        </div>
+      </div>
+      <div class="lineage-step">
+        <div class="lineage-num" style="background:var(--green)">2</div>
+        <div><div class="lineage-label">Extracted: Action Item</div>
+          <div class="lineage-text">${esc(task.title)}</div>
+          <div style="font-size:9px;color:var(--text-muted)">Assigned: ${task.assignee || 'N/A'} | Deadline: ${task.deadline || 'N/A'} | Est: ${task.estimated_hours || '?'}h</div>
+        </div>
+      </div>
+      ${wasReassigned ? `<div class="lineage-step">
+        <div class="lineage-num" style="background:var(--orange)">!</div>
+        <div><div class="lineage-label" style="color:var(--orange)">Self-Correction: Reassignment</div>
+          <div class="lineage-text">Original: ${esc(history[0]?.assignee || 'unknown')} &rarr; Current: ${esc(task.assignee || 'unknown')}</div>
+          <div style="font-size:9px;color:var(--text-muted)">${history[history.length-1]?.reason || ''}</div>
+        </div>
+      </div>` : ''}
+      <div class="lineage-step">
+        <div class="lineage-num" style="background:${STATUS_COLORS[task.status] || 'var(--text-muted)'}">3</div>
+        <div><div class="lineage-label">Current Status</div>
+          <div class="lineage-text" style="font-weight:600">${task.status.replace('_',' ').toUpperCase()} - ${task.assignee || 'UNASSIGNED'}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderAgentLog() {
+  const el = document.getElementById('agentLog');
+  if (!STATE.audit_events.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:11px">No agent events yet</div>'; return; }
+  el.innerHTML = STATE.audit_events.map(e => {
+    const isCorr = e.event_type === 'self_correction';
+    return `<div class="log-item">
+      <span class="log-time">${formatTime(e.timestamp)}</span>
+      <span class="log-dot" style="background:${isCorr ? 'var(--orange)' : 'var(--green)'}"></span>
+      <div class="log-content">
+        <div class="log-agent"><span class="badge badge-teal">${shortAgent(e.agent)}</span> ${isCorr ? '<span class="badge badge-orange">AUTO-FIX</span>' : ''}</div>
+        <div class="log-desc">${esc(e.description)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCorrections() {
+  const list = document.getElementById('correctionsList');
+  const total = STATE.corrections.length;
+  const esc_count = STATE.corrections.filter(c => c.correction_type === 'escalation').length;
+  document.getElementById('mc-total').textContent = total;
+  document.getElementById('mc-auto').textContent = total - esc_count;
+  document.getElementById('mc-esc').textContent = esc_count;
+
+  if (!total) { list.innerHTML = '<div class="empty"><div class="empty-icon">&#9888;</div><div class="empty-text">No self-corrections yet</div></div>'; return; }
+  list.innerHTML = STATE.corrections.map(c => {
+    const isEsc = c.correction_type === 'escalation';
+    const before = typeof c.before_state === 'string' ? JSON.parse(c.before_state || '{}') : (c.before_state || {});
+    const after = typeof c.after_state === 'string' ? JSON.parse(c.after_state || '{}') : (c.after_state || {});
+    return `<div class="correction-card ${isEsc ? 'escalation' : ''}">
+      <div class="correction-header">
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <span class="badge badge-teal">${shortAgent(c.agent)}</span>
+          <span class="badge ${isEsc ? 'badge-red' : 'badge-orange'}">${(c.correction_type || '').replace(/_/g, ' ')}</span>
+        </div>
+        <span style="font-size:9px;color:var(--text-muted);font-family:monospace">${formatTime(c.timestamp)}</span>
+      </div>
+      <div class="correction-desc">${esc(c.description)}</div>
+      <div class="correction-states">
+        <div class="state-box state-before">
+          <div style="font-weight:600;margin-bottom:3px;font-size:9px;text-transform:uppercase">Before</div>
+          ${Object.entries(before).map(([k,v]) => `<div>${k}: ${v ?? 'null'}</div>`).join('')}
+        </div>
+        <div class="state-arrow">&rarr;</div>
+        <div class="state-box state-after">
+          <div style="font-weight:600;margin-bottom:3px;font-size:9px;text-transform:uppercase">After</div>
+          ${Object.entries(after).map(([k,v]) => `<div>${k}: ${v}</div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAuditTrail() {
+  const el = document.getElementById('auditTimeline');
+  if (!STATE.audit_events.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:11px">No audit events yet</div>'; return; }
+  el.innerHTML = STATE.audit_events.map(e => {
+    const isCorr = e.event_type === 'self_correction';
+    return `<div class="timeline-item">
+      <div class="timeline-dot ${isCorr ? 'correction' : 'normal'}"></div>
+      <div class="timeline-body">
+        <div class="timeline-header">
+          <div style="display:flex;gap:5px;align-items:center">
+            <span class="badge badge-teal">${shortAgent(e.agent)}</span>
+            <span style="font-size:11px;font-weight:600">${e.event_type?.replace(/_/g,' ') || ''}</span>
+            ${isCorr ? '<span class="badge badge-orange">SELF-CORRECTION</span>' : ''}
+          </div>
+          <span style="font-size:9px;color:var(--text-muted);font-family:monospace">${formatTime(e.timestamp)}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.4">${esc(e.description)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAnalytics() {
+  // Compute analytics from state
+  const tasks = STATE.tasks;
+  const total = tasks.length || 1;
+  const assigned = tasks.filter(t => t.assignee && t.assignee !== 'UNASSIGNED').length;
+  const withDeadline = tasks.filter(t => t.deadline).length;
+  document.getElementById('ma-eff').textContent = tasks.length ? Math.round((assigned/total)*80 + 20) + '%' : '--';
+  document.getElementById('ma-own').textContent = tasks.length ? Math.round(assigned/total*100) + '%' : '--';
+  document.getElementById('ma-dead').textContent = tasks.length ? Math.round(withDeadline/total*100) + '%' : '--';
+
+  // Workload
+  const workload = {};
+  tasks.forEach(t => {
+    if (t.assignee && t.assignee !== 'UNASSIGNED') {
+      workload[t.assignee] = (workload[t.assignee] || 0) + (t.estimated_hours || 4);
+    }
+  });
+  const grid = document.getElementById('workloadGrid');
+  const entries = Object.entries(workload);
+  if (!entries.length) { grid.innerHTML = '<div style="color:var(--text-muted);font-size:11px;padding:10px">No workload data</div>'; return; }
+  grid.innerHTML = entries.map(([name, hours]) => {
+    const cap = 40;
+    const pct = Math.round(hours / cap * 100);
+    const color = pct > 110 ? 'var(--red)' : pct > 90 ? 'var(--orange)' : pct > 70 ? 'var(--blue)' : 'var(--green)';
+    return `<div class="workload-cell" style="border-color:${color}30">
+      <div class="workload-pct" style="color:${color}">${pct}%</div>
+      <div class="workload-name">${name.split(' ')[0]}</div>
+      <div class="workload-detail">${hours}h / ${cap}h</div>
+      ${pct > 100 ? '<span class="badge badge-red" style="font-size:8px;margin-top:4px">OVERLOADED</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderCharts() {
+  // Status pie
+  const statusCounts = {todo:0, in_progress:0, done:0, escalated:0};
+  STATE.tasks.forEach(t => { if (statusCounts[t.status] !== undefined) statusCounts[t.status]++; });
+
+  if (charts.status) charts.status.destroy();
+  const ctx1 = document.getElementById('statusChart');
+  if (ctx1) {
+    charts.status = new Chart(ctx1, {
+      type: 'doughnut',
+      data: {
+        labels: ['To Do', 'In Progress', 'Done', 'Escalated'],
+        datasets: [{ data: Object.values(statusCounts), backgroundColor: ['#484f58','#58a6ff','#2ea043','#da3633'], borderWidth: 0 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 10 } } } } }
+    });
+  }
+
+  // Priority bar
+  const priCounts = {critical:0, high:0, medium:0, low:0};
+  STATE.tasks.forEach(t => { if (priCounts[t.priority] !== undefined) priCounts[t.priority]++; });
+
+  if (charts.priority) charts.priority.destroy();
+  const ctx2 = document.getElementById('priorityChart');
+  if (ctx2) {
+    charts.priority = new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: ['Critical', 'High', 'Medium', 'Low'],
+        datasets: [{ data: Object.values(priCounts), backgroundColor: ['#da3633','#d29922','#58a6ff','#484f58'], borderRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }, x: { ticks: { color: '#8b949e' }, grid: { display: false } } } }
+    });
+  }
+
+  // Agent corrections bar
+  const agentCorr = {};
+  STATE.corrections.forEach(c => { const a = shortAgent(c.agent); agentCorr[a] = (agentCorr[a] || 0) + 1; });
+
+  if (charts.agent) charts.agent.destroy();
+  const ctx3 = document.getElementById('agentChart');
+  if (ctx3) {
+    charts.agent = new Chart(ctx3, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(agentCorr),
+        datasets: [{ data: Object.values(agentCorr), backgroundColor: '#d29922', borderRadius: 4 }]
+      },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } }, y: { ticks: { color: '#8b949e' }, grid: { display: false } } } }
+    });
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function shortAgent(a) { if (!a) return '?'; return a.replace('_agent','').replace('_',' ').replace(/\b\w/g,l=>l.toUpperCase()); }
+function formatTime(ts) { if (!ts) return ''; try { return new Date(ts).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}); } catch(e) { return ts.split('T')[1]?.split('.')[0] || ts; } }
+
+// ── INIT ─────────────────────────────────────────────────────────
+refreshDashboard();
+</script>
+</body>
+</html>
