@@ -39,7 +39,7 @@ FlowPilot is a **multi-agent AI system** that processes meeting transcripts and 
 
 ### Option 1: Local Setup (3 commands)
 ```bash
-git clone https://github.com/your-team/flowpilot.git && cd flowpilot
+git clone https://github.com/Samik123Mit/FlowPilot_ET.git && cd flowpilot
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
